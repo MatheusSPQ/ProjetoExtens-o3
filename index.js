@@ -3,43 +3,53 @@ const wppconnect = require('@wppconnect-team/wppconnect');
 wppconnect
   .create({
     session: 'sessao-mlo',
-    headless: true,
+    headless: true, // true = não abre o navegador na tela
     logQR: true,
-    puppeteerOptions: {
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process', 
-            '--disable-gpu'
-        ]
-    }
   })
   .then((client) => start(client))
-  .catch((error) => {
-    console.log(error);
-  });
+  .catch((error) => console.log(error));
 
 function start(client) {
-  client.onMessage((message) => {
+  client.onMessage(async (message) => {
     
-    // Ignora grupos
-    if (message.isGroupMsg === false) {
+    // 1. Ignora grupos e ignora status (stories)
+    if (message.isGroupMsg === false && message.from !== 'status@broadcast') {
 
-        // LÓGICA DO BOT
+        // --- OPÇÃO 1: ENDEREÇO ---
         if (message.body === '1') {
-            client.sendText(message.from, '📍 *Endereço:* Rua Exemplo, 123 - Centro, Petrópolis.\n⏰ *Horário:* Seg a Sex das 09h às 18h.');
+            // Simula que está digitando
+            await client.startTyping(message.from);
+
+            // Espera 3 segundos (3000 ms) antes de enviar
+            setTimeout(async () => {
+                await client.sendText(message.from, '📍 *Endereço MLO:*\nRua Exemplo, 123 - Centro, Petrópolis.\n\n⏰ *Horário:*\nSeg a Sex: 09h às 18h.');
+                await client.stopTyping(message.from); // Para de digitar
+            }, 3000);
         }
         
+        // --- OPÇÃO 2: VALORES ---
         else if (message.body === '2') {
-            client.sendText(message.from, '💰 *Valores Base:*\n- Formatação: R$ 80,00\n- Limpeza: R$ 50,00\nPara outros serviços, aguarde o atendente.');
+            await client.startTyping(message.from);
+
+            // Espera 3 segundos
+            setTimeout(async () => {
+                await client.sendText(message.from, '💰 *Tabela Base de Serviços:*\n\n🖥️ Formatação: R$ 80,00\n🧹 Limpeza Completa: R$ 50,00\n📡 Configuração de Rede: A combinar\n\n_Para orçamentos específicos, aguarde o técnico._');
+                await client.stopTyping(message.from);
+            }, 3000);
         }
 
+        // --- QUALQUER OUTRA COISA (MENU INICIAL) ---
         else {
-            client.sendText(message.from, 'Olá! Sou o assistente virtual da MLO 🤖\n\nComo posso ajudar? Digite apenas o número:\n\n1️⃣ - Endereço e Horários\n2️⃣ - Valores de Serviços\n\n_Para falar com humano, aguarde um momento._');
+            // O Menu responde um pouco mais rápido (2 segundos)
+            await client.startTyping(message.from);
+
+            setTimeout(async () => {
+                const saudacao = 'Olá! Sou o assistente virtual da MLO 🤖';
+                const menu = 'Como posso te ajudar hoje?\n(Digite apenas o número)\n\n1️⃣ - Endereço e Horários\n2️⃣ - Valores e Serviços\n\n_Caso tenha outra dúvida, aguarde que o Matheus já te responde!_';
+                
+                await client.sendText(message.from, `${saudacao}\n\n${menu}`);
+                await client.stopTyping(message.from);
+            }, 2000);
         }
     }
   });
